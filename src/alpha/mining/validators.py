@@ -9,7 +9,7 @@ from collections import Counter
 from dataclasses import dataclass
 from typing import Iterable, Optional, Sequence
 
-from config import RECORDS_PATH, write_event
+from alpha.core.config import RECORDS_PATH, write_event
 
 
 TS_ONLY_OPS = {

@@ -9,8 +9,11 @@ import os
 import time
 from typing import Any, Optional
 
-ROOT_PATH = os.path.dirname(__file__)
+from alpha import PROJECT_ROOT
+
+ROOT_PATH = PROJECT_ROOT
 RECORDS_PATH = os.path.join(ROOT_PATH, 'records')
+LOGS_PATH = os.path.join(ROOT_PATH, 'logs')
 
 REGION_LIST = ['USA']
 

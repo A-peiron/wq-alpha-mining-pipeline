@@ -12,7 +12,8 @@ import aiofiles
 import aiohttp
 import asyncio
 import logging as logger
-from mining.quality import evaluate_alpha as _evaluate_alpha
+from alpha.mining.quality import evaluate_alpha as _evaluate_alpha
+from alpha.core.config import RECORDS_PATH
 
 # 设置日志级别为 INFO
 logger.basicConfig(
@@ -81,7 +82,9 @@ vec_ops = ["vec_avg", "vec_sum"]
 ops_set = basic_ops + ts_ops + group_ops
 
 
-def has_submitable_alpha(records_path="records/submitable_alpha.csv"):
+def has_submitable_alpha(records_path=None):
+    if records_path is None:
+        records_path = os.path.join(RECORDS_PATH, 'submitable_alpha.csv')
     if not os.path.exists(records_path):
         return False
     try:
@@ -217,7 +220,7 @@ def split_step2_candidates(candidates):
 
 
 def login():
-    from config import load_credentials
+    from alpha.core.config import load_credentials
     creds = load_credentials()
     email, password = creds['email'], creds['password']
     if not email or not password:
@@ -987,7 +990,7 @@ def group_factory(op, field, region):
 
 
 async def async_login():
-    from config import load_credentials
+    from alpha.core.config import load_credentials
     creds = load_credentials()
     username, password = creds['email'], creds['password']
     if not username or not password:
@@ -1086,7 +1089,7 @@ async def simulate_single(session_manager, alpha_expression, region_info, name, 
                             await asyncio.sleep(1)
                             # 记录重复/失败
                             _sim_record = {"ts": time.strftime("%Y-%m-%d %H:%M:%S"), "expression": alpha, "alpha_id": None, "tag": name, "region": region, "universe": uni, "decay": decay, "duration_s": round(time.time() - _sim_start, 1), "status": "duplicated"}
-                            async with aiofiles.open('records/simulations.jsonl', mode='a') as _f:
+                            async with aiofiles.open(os.path.join(RECORDS_PATH, 'simulations.jsonl'), mode='a') as _f:
                                 await _f.write(json.dumps(_sim_record, ensure_ascii=False) + '\n')
                             return 0
                     else:
@@ -1134,7 +1137,7 @@ async def simulate_single(session_manager, alpha_expression, region_info, name, 
                                              color=None,
                                              tags=tags)
 
-            async with aiofiles.open(f'records/{name}_simulated_alpha_expression.txt', mode='a') as f:
+            async with aiofiles.open(os.path.join(RECORDS_PATH, f'{name}_simulated_alpha_expression.txt'), mode='a') as f:
                 await f.write(alpha + '\n')
 
             # 异步获取质量指标（非阻塞，失败降级为 unknown）
@@ -1182,7 +1185,7 @@ async def simulate_single(session_manager, alpha_expression, region_info, name, 
                 "quality_status": quality_status,
                 "signal_light": signal_light,
             }
-            async with aiofiles.open('records/simulations.jsonl', mode='a') as _f:
+            async with aiofiles.open(os.path.join(RECORDS_PATH, 'simulations.jsonl'), mode='a') as _f:
                 await _f.write(json.dumps(_sim_record, ensure_ascii=False) + '\n')
 
             stone_bag.append(alpha_id)

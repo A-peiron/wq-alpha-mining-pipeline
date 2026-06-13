@@ -21,6 +21,11 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  // 构建产物直接输出到后端静态目录
+  build: {
+    outDir: path.resolve(__dirname, '../src/alpha/web/static'),
+    emptyOutDir: true,
+  },
   // 开发模式代理：/api/* → http://localhost:8000
   // 解决前端 localhost:5173 调用后端 localhost:8000 的跨域问题
   server: {

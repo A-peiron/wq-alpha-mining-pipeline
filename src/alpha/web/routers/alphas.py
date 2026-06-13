@@ -31,7 +31,8 @@ from pydantic import BaseModel
 router = APIRouter()
 
 # 项目根目录 / Project root
-BASE = Path(__file__).parent.parent.parent
+from alpha.core.config import ROOT_PATH
+BASE = Path(ROOT_PATH)
 RECORDS = BASE / "records"
 
 # submitable_alpha.csv 中需要返回给前端的关键列
@@ -355,9 +356,8 @@ def submit_alpha_to_brain(alpha_id: str):
     """
     try:
         import sys
-        sys.path.insert(0, str(BASE))
-        from machine_lib import login
-        from submit_alpha import submit_alpha as _submit
+        from alpha.core.machine_lib import login
+        from alpha.pipeline.submit_alpha import submit_alpha as _submit
 
         s = login()
         status_code = _submit(s, alpha_id)
@@ -386,8 +386,7 @@ def official_check(alpha_id: str):
     """
     try:
         import sys
-        sys.path.insert(0, str(BASE))
-        from machine_lib import login
+        from alpha.core.machine_lib import login
         s = login()
         resp = s.get(f"{BRAIN_API_URL}/alphas/{alpha_id}/check", timeout=60)
         if resp.status_code == 200:

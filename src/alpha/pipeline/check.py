@@ -11,9 +11,9 @@ import traceback
 
 import numpy as np
 import pandas as pd
-from config import RECORDS_PATH, REGION_LIST, SELF_CORR_THRESHOLD, write_event, load_mining_config
-from machine_lib import *
-from mining.quality import enrich_alpha_record, sort_submitable_records, build_batch_stats, _pnl_correlation, evaluate_alpha, _infer_category
+from alpha.core.config import RECORDS_PATH, REGION_LIST, SELF_CORR_THRESHOLD, write_event, load_mining_config
+from alpha.core.machine_lib import *
+from alpha.mining.quality import enrich_alpha_record, sort_submitable_records, build_batch_stats, _pnl_correlation, evaluate_alpha, _infer_category
 from datetime import datetime, timedelta
 from concurrent.futures import ThreadPoolExecutor
 import threading

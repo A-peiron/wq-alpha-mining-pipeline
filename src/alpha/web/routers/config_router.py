@@ -19,7 +19,7 @@ from typing import Optional
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
-from config import (
+from alpha.core.config import (
     load_mining_config,
     load_credentials,
     save_credentials,

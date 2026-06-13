@@ -25,7 +25,8 @@ from fastapi.responses import StreamingResponse
 
 router = APIRouter()
 
-BASE = Path(__file__).parent.parent.parent
+from alpha.core.config import ROOT_PATH
+BASE = Path(ROOT_PATH)
 RECORDS = BASE / "records"
 EVENTS_FILE = RECORDS / "events.jsonl"
 DIGGING_LOG_FILE = BASE / "logs" / "digging.log"

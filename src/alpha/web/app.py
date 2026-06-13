@@ -28,9 +28,8 @@ from fastapi.responses import FileResponse
 
 # 将项目根目录加入 Python 路径，使 machine_lib 可被子模块导入
 # Add project root to Python path so machine_lib is importable from sub-modules
-sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from web.routers import status, alphas, platform, agent, control, experiments, config_router
+from alpha.web.routers import status, alphas, platform, agent, control, experiments, config_router
 
 app = FastAPI(
     title="Alpha Mining Dashboard",

@@ -3,8 +3,8 @@ import os
 import time
 import pandas as pd
 
-from config import RECORDS_PATH
-from machine_lib import login
+from alpha.core.config import RECORDS_PATH
+from alpha.core.machine_lib import login
 
 pd.set_option('expand_frame_repr', False)
 pd.set_option('display.max_rows', 1000)

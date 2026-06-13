@@ -34,7 +34,7 @@ chmod 600 credentials.json     # 限制读取权限
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
-pip install -r requirements.txt
+pip install -e .
 ```
 
 ## 五、前端构建
@@ -44,7 +44,7 @@ pip install -r requirements.txt
 ```bash
 cd frontend
 npm install
-npm run build          # 产物输出到 web/static
+npm run build          # 产物输出到 src/alpha/web/static
 cd ..
 ```
 
@@ -53,10 +53,10 @@ cd ..
 ```bash
 # 本地执行
 cd frontend && npm run build && cd ..
-scp -r frontend/dist/* <user>@<server>:/home/ubuntu/alpha/web/static/
+scp -r src/alpha/web/static/* <user>@<server>:/home/ubuntu/alpha/src/alpha/web/static/
 ```
 
-> 前端构建产物的目标路径始终是 `web/static/`。
+> 前端构建产物的目标路径始终是 `src/alpha/web/static/`。
 
 ## 六、用 supervisor 守护 Web 服务
 
@@ -64,7 +64,7 @@ scp -r frontend/dist/* <user>@<server>:/home/ubuntu/alpha/web/static/
 
 ```ini
 [program:alpha-web]
-command=/home/ubuntu/alpha/.venv/bin/uvicorn web.app:app --host 0.0.0.0 --port 8000
+command=/home/ubuntu/alpha/.venv/bin/uvicorn alpha.web.app:app --host 0.0.0.0 --port 8000
 directory=/home/ubuntu/alpha
 user=ubuntu
 autostart=true
@@ -91,8 +91,8 @@ sudo supervisorctl start alpha-web
 cd /home/ubuntu/alpha
 git pull
 source .venv/bin/activate
-pip install -r requirements.txt        # 依赖有变动时
-# 前端有改动则重新 build 或重传 web/static
+pip install -e .        # 依赖有变动时
+# 前端有改动则重新 build 或重传 src/alpha/web/static
 sudo supervisorctl restart alpha-web   # 改了后端/路由后重启
 ```
 

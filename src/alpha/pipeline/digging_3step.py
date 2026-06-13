@@ -8,10 +8,10 @@ import time
 import random
 from collections import defaultdict
 
-from config import *
-from machine_lib import *
-from mining.factories import deduplicate_by_core, generate_order3_candidates
-from mining.validators import prepare_expressions
+from alpha.core.config import *
+from alpha.core.machine_lib import *
+from alpha.mining.factories import deduplicate_by_core, generate_order3_candidates
+from alpha.mining.validators import prepare_expressions
 
 
 class SessionManager:
@@ -177,7 +177,7 @@ if __name__ == '__main__':
         print("%s : %d" % (key, len(value)))
 
     # 读取已完成的 alpha 表达式（去重）
-    completed_alphas = read_completed_alphas(f'records/{step3_tag}_simulated_alpha_expression.txt')
+    completed_alphas = read_completed_alphas(os.path.join(RECORDS_PATH, f'{step3_tag}_simulated_alpha_expression.txt'))
 
     third_list = to_alpha_dict[region]
     third_list = [alpha_decay for alpha_decay in third_list if alpha_decay[0] not in completed_alphas]

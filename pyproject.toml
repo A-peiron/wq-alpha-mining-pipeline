@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "alpha"
+version = "1.1.10"
+description = "WorldQuant Alpha Mining Pipeline — 分阶段因子挖掘流水线 + Web 控制台"
+requires-python = ">=3.10"
+dependencies = [
+    "pandas",
+    "numpy",
+    "requests",
+    "pyyaml",
+    "aiohttp",
+    "aiofiles",
+    "tqdm",
+    "loguru",
+    "fastapi",
+    "uvicorn[standard]",
+    "pydantic",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+"alpha.web" = ["static/**/*"]

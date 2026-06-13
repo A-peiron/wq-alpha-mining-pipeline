@@ -22,8 +22,7 @@ import os
 
 # 将项目根目录加入路径，以便导入 machine_lib
 # Add project root to path so machine_lib can be imported
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from machine_lib import login
+from alpha.core.machine_lib import login
 
 # Session 有效期（秒）/ Session validity period in seconds
 SESSION_EXPIRY = 3 * 60 * 60  # 3 hours
@@ -35,7 +34,7 @@ class BrainClient:
     Singleton client for WorldQuant Brain API
 
     用法 / Usage:
-        from brain_client import brain
+        from alpha.web.brain_client import brain
         resp = brain.get("/users/self")
     """
 

@@ -11,9 +11,9 @@ import time
 
 import pandas as pd
 
-from config import RECORDS_PATH, load_mining_config, write_event
-from machine_lib import login, get_alphas, transform
-from mining.quality import _pnl_correlation, enrich_alpha_record, sort_submitable_records
+from alpha.core.config import RECORDS_PATH, load_mining_config, write_event
+from alpha.core.machine_lib import login, get_alphas, transform
+from alpha.mining.quality import _pnl_correlation, enrich_alpha_record, sort_submitable_records
 
 brain_api_url = os.environ.get("BRAIN_API_URL", "https://api.worldquantbrain.com")
 

@@ -3,13 +3,16 @@
 本代码仅供个人学习使用，未经授权不得复制、修改或用于商业用途。
 """
 import os
+
+import os
+
+from alpha.core.machine_lib import *
+from alpha.core.fields import *
 import time
 import random
-from collections import defaultdict
-
-from config import *
-from machine_lib import *
-from mining.validators import prepare_expressions
+import asyncio
+from alpha.core.config import *
+from alpha.mining.validators import prepare_expressions
 
 class SessionManager:
     def __init__(self, session, start_time, expiry_time):
@@ -71,6 +74,7 @@ async def simulate_multiple_alphas(alpha_list, region_list, decay_list, delay_li
         # 关闭所有会话
         await session_manager.session.close()
 
+
 def read_completed_alphas(filepath):
     """
     从指定文件中读取已经完成的alpha表达式
@@ -85,77 +89,64 @@ def read_completed_alphas(filepath):
     return completed_alphas
 
 if __name__ == '__main__':
-
     mining_config = load_mining_config()
     dataset_id = mining_config['dataset_id']
     region = mining_config['region']
     universe = mining_config['universe']
     delay = mining_config['delay']
-    decay_default = mining_config['decay']
+    decay = mining_config['decay']
     neutralization = mining_config['neutralization']
     n_jobs = mining_config['n_jobs']
     EARLY_SCORE_MODE = mining_config['early_score_mode']
     step1_tag = mining_config['tags']['step1_tag']
-    step2_tag = mining_config['tags']['step2_tag']
-    print(f"[OK] 从统一配置加载: dataset={dataset_id}, delay={delay}, decay={decay_default}, step1={step1_tag}, step2={step2_tag}")
+    print(f"[OK] 从统一配置加载: dataset={dataset_id}, delay={delay}, decay={decay}, tag={step1_tag}")
 
-    instrumentType = mining_config.get('instrument_type', 'EQUITY')
+    s = login()
 
-    fo_tracker = get_alphas("2024-10-07", "2026-12-31",
-                            0.6, 0.35,     # 降低门槛：Sharpe 0.75->0.6, Fitness 0.5->0.35
-                            80, 80,        # 降低：long/short count 100->80
-                            region, universe, delay, instrumentType,
-                            800, "track", tag=step1_tag)  # 增加候选数 500->800
+    # 尝试从API获取字段，失败则使用推荐字段
+    try:
+        df = get_datafields(s, dataset_id=dataset_id, region=region, universe=universe, delay=delay)
+        pc_fields = process_datafields(df, "matrix") + process_datafields(df, "vector")
 
-    print(len(fo_tracker['next']))
-    print(len(fo_tracker['decay']))
-    fo_layer = transform(fo_tracker['next'] + fo_tracker['decay'])
+        if len(pc_fields) == 0:
+            print("[WARN]  API返回0个字段，自动切换到推荐字段列表")
+            pc_fields = recommended_fields_1
+    except Exception as e:
+        print(f"[WARN]  获取字段失败: {e}")
+        print("自动切换到推荐字段列表")
+        pc_fields = recommended_fields_1
 
-    so_alpha_dict = defaultdict(list)
-    for expr, decay in fo_layer:
-        for alpha in get_group_second_order_factory([expr], group_ops, region):
-            so_alpha_dict[region].append((alpha, decay))
-
-    for key, value in so_alpha_dict.items():
-        print("%s : %d" % (key, len(value)))
+    first_order = first_order_factory(pc_fields, ts_ops + basic_ops)
+    print(f"从 {len(pc_fields)} 个字段生成了 {len(first_order)} 个一阶因子")
 
     # 读取已完成的alpha表达式
-    completed_alphas = read_completed_alphas(f'records/{step2_tag}_simulated_alpha_expression.txt')
+    completed_alphas = read_completed_alphas(os.path.join(RECORDS_PATH, f'{step1_tag}_simulated_alpha_expression.txt'))
+    print(f"已完成 {len(completed_alphas)} 个因子")
 
-    second_list = so_alpha_dict[region]
+    # 原始alpha列表
+    alpha_list = first_order
     # 排除已完成的alpha表达式
-    second_list = [alpha_decay for alpha_decay in second_list if alpha_decay[0] not in completed_alphas]
+    alpha_list = [alpha for alpha in alpha_list if alpha not in completed_alphas]
 
-    precheck = prepare_expressions(second_list, expression_getter=lambda item: item[0], tags=[step1_tag, step2_tag], phase='order2_group')
-    second_list = precheck.items
+    precheck = prepare_expressions(alpha_list, tags=[step1_tag], phase='order1')
+    alpha_list = precheck.items
     print(f"预检后调度 {precheck.scheduled}/{precheck.total} 个因子，跳过: {precheck.skipped}")
 
-    if len(second_list) == 0:
-        print('暂时没有满足条件的一阶段因子，请你继续运行 digging_1step；本阶段直接退出，不再静默等待 10 分钟。')
+    if len(alpha_list) == 0:
+        print(f"没有因子可以跑了！总共 {len(first_order)} 个因子已全部完成或被预检过滤")
+        print(f"提示：如果想用更多字段，可以取消注释第84行使用 recommended_fields_1")
         exit(0)
 
-    print(len(second_list), "个因子正在等待回测，已经完成了", len(so_alpha_dict[region]) - len(second_list), "个因子")
+    print(len(alpha_list), "个因子正在等待回测，已经完成了", len(first_order)-len(alpha_list), "个因子")
+
+    random.shuffle(alpha_list)
 
     submitable_path = os.path.join(RECORDS_PATH, 'submitable_alpha.csv')
     has_submitable = has_submitable_alpha(submitable_path)
     reached_10k = not EARLY_SCORE_MODE
     phase_plan = build_phase_plan(has_submitable, reached_10k)
 
-    scored_candidates = []
-    for alpha_expr, decay_value in second_list:
-        score = 0
-        if "group_neutralize(" in alpha_expr:
-            score += 3
-        if "group_zscore(" in alpha_expr:
-            score += 2
-        if "group_rank(" in alpha_expr:
-            score += 1
-        if "ts_zscore(" in alpha_expr or "ts_rank(" in alpha_expr:
-            score += 1
-        score += min(decay_value, 12) / 12
-        scored_candidates.append((alpha_expr, decay_value, score))
-
-    explore_queue, develop_queue, validate_queue = split_step2_candidates(scored_candidates)
+    explore_queue, develop_queue, validate_queue = build_step1_queues(alpha_list)
     random.shuffle(explore_queue)
     random.shuffle(develop_queue)
     random.shuffle(validate_queue)
@@ -165,22 +156,17 @@ if __name__ == '__main__':
     elif phase_plan['third_role'] == 'use':
         overlap_n = max(len(validate_queue) // 2, 1)
         third_queue = validate_queue + develop_queue[:overlap_n]
-        develop_queue = develop_queue[overlap_n:]  # 避免重复提交
+        develop_queue = develop_queue[overlap_n:]  # 避免 C_USE 模式重复提交
     else:
         develop_queue = develop_queue + validate_queue
         third_queue = []
 
-    scheduled_candidates = interleave_three_queues(
+    alpha_list = interleave_three_queues(
         explore_queue,
         develop_queue,
         third_queue,
         ratio=phase_plan['ratio']
     )
-
-    alpha_list = [alpha_decay_score[0] for alpha_decay_score in scheduled_candidates]
-    decay_list = [alpha_decay_score[1] for alpha_decay_score in scheduled_candidates]
-    region_list = [(region, universe)] * len(alpha_list)
-    delay_list = [delay] * len(alpha_list)
 
     print(
         f"phase={phase_plan['phase']} third_role={phase_plan['third_role']} ratio={phase_plan['ratio']} "
@@ -188,9 +174,14 @@ if __name__ == '__main__':
         f"scheduled={len(alpha_list)}"
     )
 
+    region_list = [(region, universe)] * len(alpha_list)
+    decay_list = [decay] * len(alpha_list)
+    delay_list = [delay] * len(alpha_list)
+
     stone_bag = []
 
     # 执行异步模拟，并控制并发数量
     asyncio.run(simulate_multiple_alphas(alpha_list, region_list, decay_list, delay_list,
-                                         step2_tag, neutralization,
+                                         step1_tag, neutralization,
                                          stone_bag, n_jobs=n_jobs))
+

@@ -36,8 +36,7 @@ frontend/.vite/
 node_modules/
 
 # ───────── 后端打包的前端静态产物（由构建生成）─────────
-web/static/
-static/
+src/alpha/web/static/
 
 # ───────── 编辑器 / 系统 ─────────
 .vscode/

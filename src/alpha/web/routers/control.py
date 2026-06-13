@@ -16,12 +16,12 @@ from pathlib import Path
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import StreamingResponse
 
-from config import get_digging_config_defaults, load_mining_config, write_event
-from mining.stage_registry import get_stage, list_stages, normalize_stage_id
+from alpha.core.config import get_digging_config_defaults, load_mining_config, write_event, ROOT_PATH
+from alpha.mining.stage_registry import get_stage, list_stages, normalize_stage_id
 
 router = APIRouter()
 
-WORK_DIR = Path(__file__).parent.parent.parent
+WORK_DIR = Path(ROOT_PATH)
 
 _procs: dict[str, subprocess.Popen | None] = {}
 
@@ -46,12 +46,12 @@ def _find_system_pid(script_filename: str) -> int | None:
 
 def _is_running(stage_id: str) -> bool:
     stage = get_stage(stage_id)
-    if stage is None or not stage.script:
+    if stage is None or not stage.module:
         return False
     p = _procs.get(stage.id)
     if p is not None and p.poll() is None:
         return True
-    pid = _find_system_pid(stage.script)
+    pid = _find_system_pid(stage.module)
     if pid:
         return True
     _procs[stage.id] = None
@@ -60,23 +60,23 @@ def _is_running(stage_id: str) -> bool:
 
 def _get_pid(stage_id: str) -> int | None:
     stage = get_stage(stage_id)
-    if stage is None or not stage.script:
+    if stage is None or not stage.module:
         return None
     p = _procs.get(stage.id)
     if p is not None and p.poll() is None:
         return p.pid
-    return _find_system_pid(stage.script)
+    return _find_system_pid(stage.module)
 
 
 def _kill(stage_id: str) -> None:
     stage = get_stage(stage_id)
-    if stage is None or not stage.script:
+    if stage is None or not stage.module:
         return
     p = _procs.get(stage.id)
     if p is not None and p.poll() is None:
         p.terminate()
     else:
-        pid = _find_system_pid(stage.script)
+        pid = _find_system_pid(stage.module)
         if pid:
             try:
                 os.kill(pid, signal.SIGTERM)
@@ -101,7 +101,7 @@ def get_stages():
 @router.post('/start/{name}')
 def start_script(name: str):
     stage = _stage_or_404(name)
-    if not stage.enabled or not stage.script:
+    if not stage.enabled or not stage.module:
         raise HTTPException(status_code=400, detail=f'Stage is not runnable yet: {stage.id}')
     if _is_running(stage.id):
         return {'status': 'already_running', 'stage': stage.id, 'pid': _get_pid(stage.id)}
@@ -113,17 +113,13 @@ def start_script(name: str):
                 if _is_running(other_stage.id):
                     _kill(other_stage.id)
 
-    script_path = WORK_DIR / stage.script
-    if not script_path.exists():
-        raise HTTPException(status_code=404, detail=f'脚本文件不存在: {stage.script}')
-
     log_file = _open_log(stage.log_file)
     env = os.environ.copy()
     env['PYTHONIOENCODING'] = 'utf-8'
     env['PYTHONUTF8'] = '1'
     env['PYTHONUNBUFFERED'] = '1'
     p = subprocess.Popen(
-        [sys.executable, '-u', str(script_path)],
+        [sys.executable, '-u', '-m', stage.module],
         cwd=str(WORK_DIR),
         stdout=log_file,
         stderr=log_file,
@@ -291,7 +287,6 @@ def get_promotion_counts():
     if _promotion_cache.get('ts') and (_time.time() - _promotion_cache['ts'] < _PROMOTION_TTL):
         return _promotion_cache['data']
     import sys as _sys
-    _sys.path.insert(0, str(WORK_DIR))
     config = load_mining_config()
     tags = config.get('tags', {})
     region = config.get('region', 'USA')
@@ -300,7 +295,7 @@ def get_promotion_counts():
 
     result = {}
     try:
-        from machine_lib import login, get_alphas
+        from alpha.core.machine_lib import login, get_alphas
         s = login()
 
         instrument_type = config.get('instrument_type', 'EQUITY')

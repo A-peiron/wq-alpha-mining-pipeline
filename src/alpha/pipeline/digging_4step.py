@@ -10,10 +10,10 @@ import time
 import random
 from collections import defaultdict
 
-from config import *
-from machine_lib import *
-from mining.factories import deduplicate_by_core, generate_order4_variants
-from mining.validators import prepare_expressions
+from alpha.core.config import *
+from alpha.core.machine_lib import *
+from alpha.mining.factories import deduplicate_by_core, generate_order4_variants
+from alpha.mining.validators import prepare_expressions
 
 
 class SessionManager:
@@ -124,7 +124,7 @@ if __name__ == '__main__':
     for key, value in candidate_dict.items():
         print(f"{key}: {len(value)} 个变体候选")
 
-    completed_alphas = read_completed_alphas(f'records/{order4_tag}_simulated_alpha_expression.txt')
+    completed_alphas = read_completed_alphas(os.path.join(RECORDS_PATH, f'{order4_tag}_simulated_alpha_expression.txt'))
     fourth_list = [(e, d) for e, d in candidate_dict[region] if e not in completed_alphas]
 
     # 核心结构去重

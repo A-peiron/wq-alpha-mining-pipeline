@@ -16,6 +16,7 @@ class MiningStage:
     enabled: bool
     log_file: str
     reserved: bool = False
+    module: Optional[str] = None   # python -m 启动用的模块路径
 
 
 STAGES: tuple[MiningStage, ...] = (
@@ -24,6 +25,7 @@ STAGES: tuple[MiningStage, ...] = (
         label="Order 1 广撒网",
         description="字段 × 基础/时序算子生成一阶候选并回测",
         script="digging_1step.py",
+        module="alpha.pipeline.digging_1step",
         input_tag_key=None,
         output_tag_key="step1_tag",
         mutex_group="digging",
@@ -35,6 +37,7 @@ STAGES: tuple[MiningStage, ...] = (
         label="Order 2 分组增强",
         description="从一阶高分因子出发套 group 中性化/分组算子",
         script="digging_2step.py",
+        module="alpha.pipeline.digging_2step",
         input_tag_key="step1_tag",
         output_tag_key="step2_tag",
         mutex_group="digging",
@@ -46,6 +49,7 @@ STAGES: tuple[MiningStage, ...] = (
         label="Order 3 参数增强",
         description="从二阶高分因子出发套 decay/rank/zscore 外层增强",
         script="digging_3step.py",
+        module="alpha.pipeline.digging_3step",
         input_tag_key="step2_tag",
         output_tag_key="step3_tag",
         mutex_group="digging",
@@ -57,6 +61,7 @@ STAGES: tuple[MiningStage, ...] = (
         label="Order 4 变体扩展",
         description="rank/zscore/normalize/ts_decay_linear 变体回测，从 Order 3 高分因子出发扩展候选池",
         script="digging_4step.py",
+        module="alpha.pipeline.digging_4step",
         input_tag_key="step3_tag",
         output_tag_key="order4_tag",
         mutex_group="digging",
@@ -69,6 +74,7 @@ STAGES: tuple[MiningStage, ...] = (
         label="Order 5 相关性剪枝",
         description="对 Order 4 候选做本地 PnL 相关性剪枝，产出人工复核队列（不回测，不自动提交）",
         script="digging_5step.py",
+        module="alpha.pipeline.digging_5step",
         input_tag_key="order4_tag",
         output_tag_key="order5_tag",
         mutex_group="digging",
@@ -81,6 +87,7 @@ STAGES: tuple[MiningStage, ...] = (
         label="Check 人工清单",
         description="粗筛/精筛自相关，输出人工提交清单",
         script="check.py",
+        module="alpha.pipeline.check",
         input_tag_key=None,
         output_tag_key=None,
         mutex_group=None,
@@ -123,4 +130,4 @@ def list_stages(config: Optional[dict] = None) -> list[dict]:
 
 
 def runnable_stage_ids() -> set[str]:
-    return {stage.id for stage in STAGES if stage.enabled and stage.script}
+    return {stage.id for stage in STAGES if stage.enabled and stage.module}
