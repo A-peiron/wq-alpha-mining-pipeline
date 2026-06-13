@@ -17,7 +17,7 @@ sudo apt install -y nodejs npm
 
 ```bash
 cd /home/ubuntu
-git clone <your-repo-url> alpha
+git clone https://github.com/A-peiron/wq-alpha-mining-pipeline.git alpha
 cd alpha
 ```
 

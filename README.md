@@ -86,7 +86,7 @@
 
 ```bash
 # 1. 克隆
-git clone <your-repo-url> alpha && cd alpha
+git clone https://github.com/A-peiron/wq-alpha-mining-pipeline.git alpha && cd alpha
 
 # 2. 配置凭证（不会被提交）
 cp credentials.json.template credentials.json
