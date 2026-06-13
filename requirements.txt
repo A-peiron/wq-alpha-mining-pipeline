@@ -1,0 +1,11 @@
+pandas
+numpy
+requests
+pyyaml
+aiohttp
+aiofiles
+tqdm
+loguru
+fastapi
+uvicorn[standard]
+pydantic

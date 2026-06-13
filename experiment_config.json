@@ -1,0 +1,13 @@
+{
+  "active_experiment": "baseline",
+  "experiments": {
+    "baseline": {
+      "description": "固定标准挖掘流程：Order 1→2→3→4→5，tag 由 dataset/region/delay 自动生成。实验切换已废弃。",
+      "step1_tag": "fundamental6_usa_1step_delay1",
+      "step2_tag": "fundamental6_usa_2step_delay1",
+      "step3_tag": "fundamental6_usa_3step_delay1",
+      "order4_tag": "fundamental6_usa_4step_delay1",
+      "order5_tag": "fundamental6_usa_5step_delay1"
+    }
+  }
+}
